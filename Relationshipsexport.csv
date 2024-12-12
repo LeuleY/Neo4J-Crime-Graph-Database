@@ -1,0 +1,4 @@
+﻿Node1,Relationship,Node2
+[Victim],VICTIM_OF,[Crime]
+[Crime],COMMITTED_IN,[Location]
+[Victim],VICTIM_OF_Arson,[Crime]
