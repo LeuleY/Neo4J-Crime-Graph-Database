@@ -1,0 +1,123 @@
+
+Adding nodes from csv 
+
+//pull from import section 
+LOAD CSV WITH HEADERS FROM 'file:///Part1_Crime_Beta_5307206680000182585.CSV' AS row
+WITH row 
+
+//so that the row u r pulling from if null can be ignored
+WHERE row.Location IS NOT NULL 
+  AND row.Old_District IS NOT NULL
+  AND row.New_District IS NOT NULL 
+  AND row.Neighborhood IS NOT NULL 
+  AND row.PremiseType IS NOT NULL
+
+MERGE (k:Location {Name: row.Location})
+SET k.Neighborhood = row.Neighborhood, 
+    k.PremiseType = row.PremiseType
+
+
+TROUBLESHOOTING
+
+Adding limit for testing
+
+RETURN row LIMIT 10
+
+ check the execution plan and see where the query might be bottlenecking.
+
+PROFILE (at the very top)
+
+GIT FILE EXTENSION MINIMIZer
+
+git lfs install
+
+git lfs track "*.csv"
+
+git add .gitattributes
+git add exported-data.csv
+
+git commit -m "Add large CSV using Git LFS"
+
+git push origin master
+
+
+
+RELATIONSHIP COMMANDS
+
+Crime Victim
+
+//all victims of certain crime
+MATCH (v:Victim)-[:VICTIM_OF]->(c:Crime {Name: 'BURGLARY'})
+RETURN v
+
+
+//certain attribute of victim and certain attribute of crime
+MATCH p=(
+(v:Victim {Ethnicity: 'NOT_HISPANIC_OR_LATINO'})
+-[r:VICTIM_OF]->
+(c:Crime {Name: 'BURGLARY'}) 
+)
+RETURN p LIMIT 25
+
+
+
+Crime - Location
+
+
+//certain attribute of crime to certain attribute of location
+MATCH p=({Name: 'ARSON'})-[r:COMMITTED_IN]->({Neighborhood: 'HOMELAND'}) RETURN p LIMIT 25
+
+
+//or
+
+
+MATCH p=(c:Crime)-[r:COMMITTED_IN]->(l:Location)
+
+
+WHERE c.Name=”ARSON” AND l.Neighborhood=’’HOMELAND’’
+ RETURN p LIMIT 25
+
+
+//can write attributes at WHERE(diff way to write it)
+
+
+MATCH p=(
+  (c:Crime)
+  -[r:COMMITTED_IN]->
+  (l:Location)
+)
+WHERE c.Weapon IS NOT NULL AND l.PremiseType='STREET'
+RETURN p
+LIMIT 25
+
+
+
+
+Crime - Victim - Location 
+
+
+MATCH (v:Victim)-[:VICTIM_OF]->(c:Crime)-[:COMMITTED_IN]->(l:Location)
+WHERE c.Weapon IS NOT NULL AND l.PremiseType = 'STREET'
+RETURN v, c, l
+LIMIT 50
+
+
+
+
+
+
+
+
+Exporting
+
+
+CALL apoc.export.csv.query  (
+ 
+ "MATCH (c:Crime)-[:COMMITTED_IN]->(l:Location) RETURN c.Name AS Crime, l.Name AS Location",
+  "crime_location_export.csv",
+  {useHeader: true}
+
+
+
+
+)
